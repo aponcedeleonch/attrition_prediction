@@ -1,3 +1,5 @@
+"""Module for processing attrition data."""
+
 import logging
 from pathlib import Path
 from abc import ABC, abstractmethod
@@ -5,26 +7,27 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+
 class ReadAttritionData(ABC):
+    """Abstract class for attrition readers."""
 
     def __init__(self) -> None:
         """Init of ProcessingAttritionData."""
-        self.attrition_data_df = None
 
     @abstractmethod
-    def _read_from_source(self) -> pd.DataFrame:
+    def read_from_source(self) -> pd.DataFrame:
         """Read source of information into DF."""
-        pass
 
     @abstractmethod
     def process(self) -> pd.DataFrame:
         """Process information and returns pandas DF."""
-        pass
 
 
 class WriteAttritionData(ABC):
+    # pylint: disable=too-few-public-methods
+    """Abstract class for attrition writers."""
 
-    def __init__(self, attrition_data_df: pd.DataFrame):
+    def __init__(self, attrition_data_df: pd.DataFrame) -> None:
         "Init of ProcessingAttritionData"
         self.attrition_data_df = attrition_data_df
 
@@ -32,15 +35,17 @@ class WriteAttritionData(ABC):
     def write(self) -> None:
         """Write processed pandas DF."""
 
+
 class ReadAttritionDataFromCSV(ReadAttritionData):
+    """Read attrition data from a CSV file."""
 
     def __init__(self, source_csv_str_path: str) -> None:
         "Init of ProcessingAttritionData"
         super().__init__()
         self.source_csv_str_path = source_csv_str_path
-        self.attrition_data_df = self._read_from_source()
+        self.attrition_data_df = self.read_from_source()
 
-    def _read_from_source(self) -> pd.DataFrame:
+    def read_from_source(self) -> pd.DataFrame:
         """Read source of information into DF."""
         file_path = Path(self.source_csv_str_path)
         if not file_path.is_file():
@@ -53,22 +58,23 @@ class ReadAttritionDataFromCSV(ReadAttritionData):
         self.attrition_data_df = self._remove_column('EmployeeNumber')
         self.attrition_data_df = self._remove_columns_with_single_value()
         return self.attrition_data_df
-    
+
     def _check_employee_counts_equal_to_1(self) -> pd.DataFrame:
         """Check for a valid EmployeeCount."""
         employee_counts = pd.unique(self.attrition_data_df['EmployeeCount'])
         if len(employee_counts) != 1:
             raise NotImplementedError(f'More than one EmployeeCount found. Only 1 supported. {employee_counts}')
-        else:
-            employee_count = employee_counts.item()
-            if employee_count != 1:
-                raise NotImplementedError(f'No functionality implemented for EmployeeCount != 1. {employee_count}')
+
+        employee_count = employee_counts.item()
+        if employee_count != 1:
+            raise NotImplementedError(f'No functionality implemented for EmployeeCount != 1. {employee_count}')
+
         return self.attrition_data_df.drop(columns=['EmployeeCount'])
-    
-    def _remove_column(self, column_to_remove) -> pd.DataFrame:
+
+    def _remove_column(self, column_to_remove: str) -> pd.DataFrame:
         """Remove EmployeeNumber from data."""
         return self.attrition_data_df.drop(columns=[column_to_remove])
-    
+
     def _remove_columns_with_single_value(self) -> pd.DataFrame:
         original_columns = list(self.attrition_data_df.columns)
         for column in original_columns:
