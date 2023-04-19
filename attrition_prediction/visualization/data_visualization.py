@@ -6,47 +6,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-CATEGORIZED_COLUMNS = [
-                        # 'Age',
-                        'BusinessTravel',
-                        # 'DailyRate',
-                        'Department',
-                        # 'DistanceFromHome',
-                        'Education',
-                        'EducationField',
-                        'EnvironmentSatisfaction',
-                        'Gender',
-                        # 'HourlyRate',
-                        'JobInvolvement',
-                        'JobLevel',
-                        'JobRole',
-                        'JobSatisfaction',
-                        'MaritalStatus',
-                        # 'MonthlyIncome',
-                        # 'MonthlyRate',
-                        # 'NumCompaniesWorked',
-                        'Over18',
-                        'OverTime',
-                        # 'PercentSalaryHike',
-                        'PerformanceRating',
-                        # 'RelationshipSatisfaction',
-                        # 'StandardHours',
-                        'StockOptionLevel',
-                        # 'TotalWorkingYears',
-                        'TrainingTimesLastYear',
-                        'WorkLifeBalance',
-                        # 'YearsAtCompany',
-                        # 'YearsInCurrentRole',
-                        # 'YearsSinceLastPromotion',
-                        # 'YearsWithCurrManager'
-                    ]
-
-
-def is_column_not_a_categorized_column(column: str) -> bool:
-    """Check if column is a categorized column."""
-    return column not in CATEGORIZED_COLUMNS
-
-
 def is_a_big_label_column(column: str) -> bool:
     """Check if the column is one of the ones with big labels in x axis."""
     return column in ('JobRole', 'MonthlyIncome')
@@ -130,50 +89,12 @@ class AttritionPlotting:
 
         return fig
 
-    def _get_quantiles_of_column(self, column, new_column_name):
-        quantiles_to_get = [0.1, 0.25, 0.5, 0.75, 0.9]
-        quantiles_values = self.attrition_data_df[column].quantile(quantiles_to_get)
-        self.attrition_data_df[new_column_name] = (
-                                                    f'[0,0.1)Q\n'
-                                                    f'({self.attrition_data_df[column].min():.1f}, '
-                                                    f'{quantiles_values[0.1]:.1f})'
-                                                )
-        for quantile, next_quantile in zip(quantiles_to_get[:-1], quantiles_to_get[1:]):
-            quantile_value = quantiles_values[quantile]
-            next_quantile_value = quantiles_values[next_quantile]
-            self.attrition_data_df.loc[
-                                        self.attrition_data_df[column].between(
-                                                                                quantile_value,
-                                                                                next_quantile_value,
-                                                                                inclusive='left'
-                                                                            ),
-                                        new_column_name
-                                    ] = (
-                                            f'[{quantile}, {next_quantile})Q\n'
-                                            f'[{quantile_value:.1f}, {next_quantile_value:.1f})'
-                                        )
-        self.attrition_data_df.loc[
-                                    self.attrition_data_df[column] >= quantiles_values[0.9],
-                                    new_column_name
-                                ] = (
-                                        f'[0.9,1]Q\n'
-                                        f'[{quantiles_values[0.9]:.1f}, '
-                                        f'{self.attrition_data_df[column].max():.1f}]'
-                                    )
-        return self.attrition_data_df
-
     def plot_column(self, column: str, plot_relative_values: bool = False) -> plt.Figure:
         """Prepare the data and plot any given column of attrition data."""
         figure_title = f'Attrition of employees by {column}.'
         rotate_xticks = is_a_big_label_column(column)
-        column_to_plot = column
-        if is_column_not_a_categorized_column(column):
-            new_column_name = f'{column}Categorized'
-            self.attrition_data_df = self._get_quantiles_of_column(column=column, new_column_name=new_column_name)
-            column_to_plot = new_column_name
-
         return self._plot_barplot(
-                                    column_to_plot=column_to_plot,
+                                    column_to_plot=column,
                                     figure_title=figure_title,
                                     plot_relative_values=plot_relative_values,
                                     rotate_xticks=rotate_xticks
